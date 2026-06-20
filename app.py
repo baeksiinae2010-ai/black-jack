@@ -72,7 +72,7 @@ st.markdown(f"""
         margin-bottom: 15px;
     }}
     </style>
-""", unsafe_allow_url=True)
+""", unsafe_allow_html=True) # <-- 이 부분의 오타를 수정했습니다!
 
 # 2. Game Core Functions
 def create_deck():
@@ -129,7 +129,6 @@ def render_card_html(card, facedown=False):
     suit, rank = card
     color = "red" if suit in ['♥', '♦'] else "black"
     card_bg = theme_style['card_bg']
-    text_color = "#333333" if card_bg in ['#ffffff', '#f9f9f9'] else theme_style['text_color']
     
     return f"""
     <div style="display: inline-block; width: 75px; height: 110px; 
@@ -175,7 +174,7 @@ with col_right:
     
     if st.session_state.game_status == "betting":
         st.markdown("<h3 style='text-align: center; margin-top: 40px;'>PLACE YOUR BETS</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>베팅액 설정 후아래 [Deal] 버튼을 누르면 카드가 분배됩니다.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center;'>베팅액 설정 후 아래 [Deal] 버튼을 누르면 카드가 분배됩니다.</p>", unsafe_allow_html=True)
         
         if st.button(" Deal (게임 시작) 🃏", use_container_width=True):
             if st.session_state.current_bet > st.session_state.bankroll:
@@ -202,7 +201,7 @@ with col_right:
                 st.rerun()
 
     else:
-        # Render Active Cards Table - Ensuring initial cards are ALWAYS rendered beautifully
+        # Render Active Cards Table
         p_score = calculate_score(st.session_state.player_hand)
         d_score = calculate_score(st.session_state.dealer_hand)
         
@@ -210,13 +209,11 @@ with col_right:
         st.markdown("<h4>👁️ DEALER TABLE</h4>", unsafe_allow_html=True)
         dealer_cards_html = ""
         if st.session_state.game_status == "playing":
-            # Show first card face up, second card face down
             dealer_cards_html += render_card_html(st.session_state.dealer_hand[0], facedown=False)
             dealer_cards_html += render_card_html(st.session_state.dealer_hand[1], facedown=True)
             st.markdown(f"<div>{dealer_cards_html}</div>", unsafe_allow_html=True)
             st.write("점수: 숨김")
         else:
-            # Show all cards
             for card in st.session_state.dealer_hand:
                 dealer_cards_html += render_card_html(card, facedown=False)
             st.markdown(f"<div>{dealer_cards_html}</div>", unsafe_allow_html=True)
@@ -248,7 +245,6 @@ with col_right:
             with btn_col2:
                 if st.button("Stand (멈추고 결과 보기) 🛑", use_container_width=True):
                     st.session_state.game_status = "resolved"
-                    # Dealer draws until 17 or higher
                     while calculate_score(st.session_state.dealer_hand) < 17:
                         st.session_state.dealer_hand.append(st.session_state.deck.pop())
                     
@@ -284,14 +280,14 @@ with col_right:
             if st.button("🔄 다음 게임 정산 및 진행하기", use_container_width=True, type="primary"):
                 st.session_state.game_status = "betting"
                 if st.session_state.bankroll <= 0:
-                    st.session_state.bankroll = 1000 # auto-refill if bankrupt
+                    st.session_state.bankroll = 1000
                     st.session_state.game_message = "💸 자산을 모두 잃어 $1,000 충전 해드렸습니다!"
                     st.session_state.message_type = "info"
                 st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 4. Clean & Compact Theme Selection at the Bottom (Ensuring it does NOT stretch)
+# 4. Clean & Compact Theme Selection at the Bottom
 st.markdown("<br><br>", unsafe_allow_html=True)
 theme_col1, theme_col2, theme_col3 = st.columns([2, 1, 2])
 with theme_col2:
