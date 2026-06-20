@@ -74,56 +74,48 @@ st.markdown(f"""
     /* 칩이 차곡차곡 쌓이는 스택 컨테이너 */
     .chip-stack-zone {{
         position: relative;
-        width: 60px;
+        width: 65px;
         height: 80px;
         display: flex;
         align-items: flex-end;
         justify-content: center;
     }}
 
-    /* 누적되어 쌓이는 개별 칩 애니메이션 요소 */
+    /* 3D 누적 스택 칩 애니메이션 요소 (옆면의 두께가 보이도록 형태 변경) */
     .stacked-chip {{
         position: absolute;
-        width: 46px; height: 14px;
+        width: 52px; height: 20px;
         border-radius: 50%;
-        border: 2px dashed rgba(255,255,255,0.8);
-        box-shadow: 0px 2px 3px rgba(0,0,0,0.4);
-        font-size: 9px;
-        font-weight: bold;
+        border: 2px dashed rgba(255,255,255,0.6);
+        font-size: 10px;
+        font-weight: 900;
         color: white !important;
         display: flex;
         align-items: center;
         justify-content: center;
-        text-shadow: 1px 1px 1px rgba(0,0,0,0.6);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         transition: transform 0.2s ease;
-        animation: dropChip 0.15s ease-out forwards;
+        animation: dropChip 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }}
 
     @keyframes dropChip {{
-        0% {{ transform: translateY(-20px) scale(1.1); opacity: 0; }}
-        100% {{ opacity: 1; }}
+        0% {{ transform: translateY(-40px) scale(1.1); opacity: 0; }}
+        100% {{ transform: translateY(0) scale(1); opacity: 1; }}
     }}
 
-    /* 진짜 원형 칩 버튼 스타일 및 클릭 애니메이션 구현 */
+    /* 리얼 3D 칩 버튼 공통 규격 */
     .stButton > button[key^="btn_chip_"] {{
-        width: 56px !important;
-        height: 56px !important;
+        width: 58px !important;
+        height: 58px !important;
         border-radius: 50% !important;
-        font-weight: bold !important;
-        font-size: 13px !important;
+        font-weight: 900 !important;
+        font-size: 14px !important;
         color: white !important;
-        border: 4px dashed #FFF !important;
-        box-shadow: 0px 5px 8px rgba(0,0,0,0.5) !important;
         padding: 0 !important;
-        min-width: 56px !important;
+        min-width: 58px !important;
         cursor: pointer;
         transition: transform 0.05s ease, box-shadow 0.05s ease !important;
-    }}
-
-    /* 마우스 클릭 시 잠깐 내려갔다 올라오는 모션 효과 */
-    .stButton > button[key^="btn_chip_"]:active {{
-        transform: scale(0.92) translateY(3px) !important;
-        box-shadow: 0px 2px 3px rgba(0,0,0,0.3) !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
     }}
 
     /* 리얼 카지노 테이블 매트 */
@@ -187,7 +179,6 @@ st.markdown(f"""
         animation: flyFaceDown 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }}
 
-    /* 덱(우측상단)에서 슬롯으로 0.7초 만에 날아와 뒤집히는 프레임 */
     @keyframes flyAndFlip {{
         0% {{
             transform: translate(250px, -120px) rotateX(0deg) rotateY(180deg) scale(0.9);
@@ -264,7 +255,6 @@ def resolve_round(result):
     if result == "player_blackjack": st.session_state.balance += int(st.session_state.current_bet * 2.5)
     elif result == "player_win": st.session_state.balance += st.session_state.current_bet * 2
     elif result == "push": st.session_state.balance += st.session_state.current_bet
-    # 정산 완료 시 누적된 칩 비우기
     st.session_state.current_bet = 0
     st.session_state.bet_chips = []
 
@@ -279,11 +269,14 @@ with col_bank:
     
     # 누적된 칩들을 입체적으로 쌓아 올릴 HTML 코드 동적 생성
     stack_html = ""
-    for i, chip_info in enumerate(st.session_state.bet_chips[-10:]): # 최대 최근 10개까지 화면에 쌓기 구현
-        bottom_offset = i * 6
-        stack_html += f'<div class="stacked-chip" style="background:{chip_info["color"]}; bottom:{bottom_offset}px;">${chip_info["val"]}</div>'
+    for i, chip_info in enumerate(st.session_state.bet_chips[-12:]): # 최대 12개까지 화려하게 쌓기
+        bottom_offset = i * 7
+        c = chip_info["color"]
+        e = chip_info["edge"]
+        # 3D 원통형 측면 두께를 만들어내는 핵심 다중 그림자 코드
+        shadows = f"inset 0 1px 3px rgba(255,255,255,0.5), inset 0 -2px 3px rgba(0,0,0,0.3), 0 1px 0 {e}, 0 2px 0 {e}, 0 3px 0 {e}, 0 4px 0 {e}, 0 6px 6px rgba(0,0,0,0.6)"
+        stack_html += f'<div class="stacked-chip" style="background:{c}; bottom:{bottom_offset}px; box-shadow:{shadows};">${chip_info["val"]}</div>'
 
-    # 상단 자산 및 판돈 레이아웃 영역 (칩 쌓기 렌더링 포함)
     bank_html = f"""
     <div class="chip-bank-container">
         <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">보유 자산</p>
@@ -302,27 +295,43 @@ with col_bank:
     """
     render_html(bank_html)
     
-    # 칩 선택 및 베팅 제어 영역
     if st.session_state.game_stage == "betting":
         st.markdown('<div style="text-align: center; margin-top: -15px; margin-bottom: 15px;">', unsafe_allow_html=True)
         chip_cols = st.columns(4)
         chip_values = [10, 50, 100, 500]
+        # 칩 표면 색상과 측면 두께 색상(어두운 톤)
         chip_colors = ["#DC2626", "#2563EB", "#16A34A", "#7C3AED"]
+        chip_edges = ["#991B1B", "#1E40AF", "#14532D", "#5B21B6"]
         
         for idx, val in enumerate(chip_values):
             with chip_cols[idx]:
-                # 진짜 원형 칩 스타일이 주입된 개별 클릭 버튼
-                st.markdown(f'<style>.stButton > button[key="btn_chip_{val}"] {{ background-color: {chip_colors[idx]} !important; }}</style>', unsafe_allow_html=True)
+                c = chip_colors[idx]
+                e = chip_edges[idx]
+                # 각 칩 버튼에 입체 질감 그라데이션 및 측면 두께 3D 음영 부여, 클릭 시 내려앉는 CSS 인젝션
+                st.markdown(f'''
+                <style>
+                .stButton > button[key="btn_chip_{val}"] {{
+                    background: radial-gradient(circle at 30% 30%, {c} 0%, {e} 100%) !important;
+                    box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.3), 0 4px 0 {e}, 0 8px 10px rgba(0,0,0,0.5) !important;
+                    border: 4px dashed rgba(255,255,255,0.6) !important;
+                    transform: translateY(0) !important;
+                }}
+                .stButton > button[key="btn_chip_{val}"]:active {{
+                    box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.3), 0 1px 0 {e}, 0 3px 4px rgba(0,0,0,0.5) !important;
+                    transform: translateY(3px) !important;
+                }}
+                </style>
+                ''', unsafe_allow_html=True)
+                
                 if st.button(f"${val}", key=f"btn_chip_{val}", use_container_width=True):
                     if st.session_state.balance >= val:
                         st.session_state.current_bet += val
                         st.session_state.balance -= val
-                        # 쌓이는 애니메이션 리스트에 색상과 금액 정보 추가
-                        st.session_state.bet_chips.append({"val": val, "color": chip_colors[idx]})
+                        # 스택 구역에 그릴 색상, 음영, 값 정보 추가 저장
+                        st.session_state.bet_chips.append({"val": val, "color": c, "edge": e})
                         st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # 칩 베팅 타이틀 및 기능 (위치와 크기 완벽 보존)
         if st.button("칩 베팅 🪙", use_container_width=True):
             pass 
             
@@ -361,7 +370,6 @@ with col_table:
         </div>
         """
     else:
-        # --- 딜러 카드 및 지정 슬롯 상단 배치 ---
         table_html += f'<div style="text-align: center; font-size: 12px; font-weight: bold; color:{cfg["text_muted"]};">🤖 DEALER TABLE SLOT</div>'
         table_html += f'<div class="slot-container">'
         for idx, card in enumerate(st.session_state.dealer_hand):
@@ -373,7 +381,6 @@ with col_table:
         
         table_html += f'<div style="text-align:center; color:rgba(255,255,255,0.1); margin:15px 0;">♣ ♦ ♥ ♠ ♣ ♦ ♥ ♠ ♣ ♦ ♥ ♠</div>'
         
-        # --- 플레이어 카드 및 지정 슬롯 하단 배치 ---
         table_html += f'<div class="slot-container">'
         for card in st.session_state.player_hand:
             table_html += get_card_element(card)
