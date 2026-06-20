@@ -13,6 +13,9 @@ if 'current_bet' not in st.session_state:
     st.session_state['current_bet'] = 0
 if 'game_stage' not in st.session_state:
     st.session_state['game_stage'] = "betting"
+# 클릭된 칩 목록을 저장하여 쌓이는 효과를 주기 위한 리스트
+if 'bet_chips' not in st.session_state:
+    st.session_state['bet_chips'] = []
 
 themes = {
     "🌲 모스 그린": {
@@ -49,33 +52,78 @@ st.markdown(f"""
         color: {cfg['text']};
     }}
 
-    /* 칩 보관함 */
+    /* 칩 보관함 레이아웃 */
     .chip-bank-container {{
         background: rgba(0, 0, 0, 0.3);
         border: 2px solid {cfg['border']};
         border-radius: 16px;
         padding: 20px;
-        text-align: center;
         box-shadow: inset 0px 4px 10px rgba(0,0,0,0.5);
+        position: relative;
     }}
-    
-    /* 기존 칩 스타일 유지하되 버튼 클릭 연동을 위해 일부 투명화 제거 및 정렬 */
-    .casino-chip-wrapper {{
-        display: inline-block;
-        margin: 4px;
+
+    /* 판돈 정보와 쌓이는 칩을 나란히 놓기 위한 플렉스 상자 */
+    .bet-status-area {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 2px 0 15px 0;
+        min-height: 80px;
     }}
-    
-    /* 기본 버튼 스트림릿 스타일 제거 및 칩 커스텀화 */
-    .stButton > button.chip-btn-style {{
-        width: 55px !important; height: 55px !important;
+
+    /* 칩이 차곡차곡 쌓이는 스택 컨테이너 */
+    .chip-stack-zone {{
+        position: relative;
+        width: 60px;
+        height: 80px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }}
+
+    /* 누적되어 쌓이는 개별 칩 애니메이션 요소 */
+    .stacked-chip {{
+        position: absolute;
+        width: 46px; height: 14px;
+        border-radius: 50%;
+        border: 2px dashed rgba(255,255,255,0.8);
+        box-shadow: 0px 2px 3px rgba(0,0,0,0.4);
+        font-size: 9px;
+        font-weight: bold;
+        color: white !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.6);
+        transition: transform 0.2s ease;
+        animation: dropChip 0.15s ease-out forwards;
+    }}
+
+    @keyframes dropChip {{
+        0% {{ transform: translateY(-20px) scale(1.1); opacity: 0; }}
+        100% {{ opacity: 1; }}
+    }}
+
+    /* 진짜 원형 칩 버튼 스타일 및 클릭 애니메이션 구현 */
+    .stButton > button[key^="btn_chip_"] {{
+        width: 56px !important;
+        height: 56px !important;
         border-radius: 50% !important;
-        font-weight: bold !important; font-size: 13px !important;
+        font-weight: bold !important;
+        font-size: 13px !important;
         color: white !important;
         border: 4px dashed #FFF !important;
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.4) !important;
+        box-shadow: 0px 5px 8px rgba(0,0,0,0.5) !important;
         padding: 0 !important;
-        min-width: 55px !important;
+        min-width: 56px !important;
         cursor: pointer;
+        transition: transform 0.05s ease, box-shadow 0.05s ease !important;
+    }}
+
+    /* 마우스 클릭 시 잠깐 내려갔다 올라오는 모션 효과 */
+    .stButton > button[key^="btn_chip_"]:active {{
+        transform: scale(0.92) translateY(3px) !important;
+        box-shadow: 0px 2px 3px rgba(0,0,0,0.3) !important;
     }}
 
     /* 리얼 카지노 테이블 매트 */
@@ -216,7 +264,9 @@ def resolve_round(result):
     if result == "player_blackjack": st.session_state.balance += int(st.session_state.current_bet * 2.5)
     elif result == "player_win": st.session_state.balance += st.session_state.current_bet * 2
     elif result == "push": st.session_state.balance += st.session_state.current_bet
+    # 정산 완료 시 누적된 칩 비우기
     st.session_state.current_bet = 0
+    st.session_state.bet_chips = []
 
 # --- 5. 🎮 게임 화면 레이아웃 그리기 ---
 st.markdown(f"<h1 style='text-align: center; font-weight: 900; margin-bottom: 20px;'>🃏 카드 게임</h1>", unsafe_allow_html=True)
@@ -227,13 +277,26 @@ col_bank, col_table = st.columns([1, 3.2])
 with col_bank:
     st.markdown("### 🏦 칩 보관함")
     
-    # 상단 정보 텍스트 컨테이너 출력
+    # 누적된 칩들을 입체적으로 쌓아 올릴 HTML 코드 동적 생성
+    stack_html = ""
+    for i, chip_info in enumerate(st.session_state.bet_chips[-10:]): # 최대 최근 10개까지 화면에 쌓기 구현
+        bottom_offset = i * 6
+        stack_html += f'<div class="stacked-chip" style="background:{chip_info["color"]}; bottom:{bottom_offset}px;">${chip_info["val"]}</div>'
+
+    # 상단 자산 및 판돈 레이아웃 영역 (칩 쌓기 렌더링 포함)
     bank_html = f"""
     <div class="chip-bank-container">
         <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">보유 자산</p>
         <h2 style="color: #FBBF24 !important; font-weight: 900; margin: 2px 0 12px 0;">${st.session_state.balance}</h2>
-        <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">베팅된 판돈</p>
-        <h3 style="color: #EF4444 !important; font-weight: 700; margin: 2px 0 15px 0;">${st.session_state.current_bet}</h3>
+        <div class="bet-status-area">
+            <div>
+                <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0; text-align: left;">베팅된 판돈</p>
+                <h3 style="color: #EF4444 !important; font-weight: 700; margin: 2px 0 0 0; text-align: left;">${st.session_state.current_bet}</h3>
+            </div>
+            <div class="chip-stack-zone">
+                {stack_html}
+            </div>
+        </div>
         <hr style="border-color: rgba(255,255,255,0.1); margin-bottom: 12px;">
     </div>
     """
@@ -241,7 +304,6 @@ with col_bank:
     
     # 칩 선택 및 베팅 제어 영역
     if st.session_state.game_stage == "betting":
-        # 칩 클릭 시 각 금액에 맞춰 클릭 횟수만큼 누적 연산 진행
         st.markdown('<div style="text-align: center; margin-top: -15px; margin-bottom: 15px;">', unsafe_allow_html=True)
         chip_cols = st.columns(4)
         chip_values = [10, 50, 100, 500]
@@ -249,17 +311,20 @@ with col_bank:
         
         for idx, val in enumerate(chip_values):
             with chip_cols[idx]:
-                # 기존 CSS 디자인 사양 그대로 버튼에 주입
+                # 진짜 원형 칩 스타일이 주입된 개별 클릭 버튼
+                st.markdown(f'<style>.stButton > button[key="btn_chip_{val}"] {{ background-color: {chip_colors[idx]} !important; }}</style>', unsafe_allow_html=True)
                 if st.button(f"${val}", key=f"btn_chip_{val}", use_container_width=True):
                     if st.session_state.balance >= val:
                         st.session_state.current_bet += val
                         st.session_state.balance -= val
+                        # 쌓이는 애니메이션 리스트에 색상과 금액 정보 추가
+                        st.session_state.bet_chips.append({"val": val, "color": chip_colors[idx]})
                         st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # 칩 베팅 타이틀 및 기능 (위치와 크기 그대로 보존)
+        # 칩 베팅 타이틀 및 기능 (위치와 크기 완벽 보존)
         if st.button("칩 베팅 🪙", use_container_width=True):
-            pass # 클릭 횟수대로 실시간 자동 베팅되므로 버튼 액션은 비워둠 (디자인 보존용)
+            pass 
             
         if st.session_state.current_bet > 0:
             st.write("")
@@ -269,6 +334,7 @@ with col_bank:
             if st.button("❌ 베팅 취소", use_container_width=True):
                 st.session_state.balance += st.session_state.current_bet
                 st.session_state.current_bet = 0
+                st.session_state.bet_chips = []
                 st.rerun()
     else:
         st.write("")
