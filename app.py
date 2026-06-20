@@ -96,7 +96,6 @@ st.markdown(f"""
     /* --- [요구사항 2] 진짜 카드 뒷면 무늬 및 글씨 반전 없는 3D 뒤집기 모션 --- */
     .deck-pile {{
         position: absolute; top: 25px; right: 40px; width: 90px; height: 130px;
-        /* 진짜 카지노 다이아몬드 패턴 */
         background-color: #002244; 
         background-image: 
             linear-gradient(135deg, rgba(255,255,255,0.1) 25%, transparent 25%),
@@ -137,7 +136,7 @@ st.markdown(f"""
 
     .card-front {{
         background-color: white !important;
-        transform: rotateY(0deg); /* 앞면 고정 (좌우 반전 해결) */
+        transform: rotateY(0deg); 
     }}
 
     .card-back-face {{
@@ -149,10 +148,9 @@ st.markdown(f"""
             linear-gradient(315deg, rgba(255,255,255,0.15) 25%, #002244 25%);
         background-position:  10px 0, 10px 0, 0 0, 0 0; background-size: 20px 20px;
         border: 2px solid #FFF;
-        transform: rotateY(180deg); /* 180도 돌아가 있는 진짜 뒷면 */
+        transform: rotateY(180deg);
     }}
 
-    /* 180도(뒷면)로 날아오다가 0도(앞면)로 뒤집어지는 완벽한 3D 모션 */
     @keyframes flyAndFlip {{
         0% {{ transform: translate(250px, -120px) rotateY(180deg) scale(0.9); opacity: 0; }}
         50% {{ transform: translate(0, 0) rotateY(180deg) scale(1); opacity: 1; }}
@@ -188,7 +186,6 @@ def calculate_score(hand):
     return score
 
 def get_card_element(card, hidden=False):
-    # 숨겨진 카드 렌더링 (뒤집히지 않고 뒷면 유지)
     if hidden:
         return '''
         <div class="playing-card-container">
@@ -198,7 +195,6 @@ def get_card_element(card, hidden=False):
             </div>
         </div>
         '''
-    # 앞면으로 플립되는 카드 렌더링
     suit, rank = card[0], card[1]
     color = "#E53E3E" if suit in ['♥', '♦'] else "#1A202C"
     return f'''
@@ -230,11 +226,11 @@ def resolve_round(result):
     st.session_state.bet_chips = []
 
 # --- 5. 🎮 게임 화면 레이아웃 디스플레이 ---
-st.markdown(f"<h1 style='text-align: center; font-weight: 900; margin-bottom: 20px;'>🃏 리얼 카지노 블랙잭</h1>", unsafe_allow_html=True)
+# 선생님 제출용으로 깔끔하게 "카드 게임" 타이틀 고정
+st.markdown(f"<h1 style='text-align: center; font-weight: 900; margin-bottom: 20px;'>🃏 카드 게임</h1>", unsafe_allow_html=True)
 
 col_bank, col_table = st.columns([1, 3.2])
 
-# [왼쪽 영역: 칩 보관 및 베팅 제어 (기존 로직 완벽 보존)]
 with col_bank:
     st.markdown("### 🏦 칩 보관함")
     stack_html = ""
@@ -321,14 +317,12 @@ with col_bank:
         st.write("")
         st.info("🎰 게임이 진행 중입니다.")
 
-# [오른쪽 영역: 3D 카지노 게임 테이블]
 with col_table:
-    # 플레이어 21점 달성 시 강제 종료 방지 (오직 21점 '초과' 시에만 버스트 패배 처리)
     p_score = 0
     if st.session_state.game_stage not in ["betting"]:
         p_score = calculate_score(st.session_state.player_hand)
         if st.session_state.game_stage == "playing" and p_score > 21:
-            resolve_round("dealer_win") # 버스트
+            resolve_round("dealer_win") 
             st.rerun()
 
     table_html = f'<div class="casino-table"><div class="deck-pile">DECK</div>'
@@ -339,18 +333,16 @@ with col_table:
         else:
             table_html += f'<div style="text-align: center; padding-top: 150px;"><h2 style="font-weight: 700; opacity: 0.8; letter-spacing:2px; color: #10B981;">READY TO DEAL</h2><p style="color: {cfg["text_muted"]}; font-size:14px;">왼쪽의 <b>[🃏 게임 시작 (Deal)]</b> 버튼을 눌러 승부를 시작하세요!</p></div>'
     else:
-        # [딜러 테이블 렌더링] (딜러 턴일 때는 두 번째 카드가 공개되어 그려짐)
         table_html += f'<div style="text-align: center; font-size: 12px; font-weight: bold; color:{cfg["text_muted"]};">🤖 DEALER TABLE SLOT</div><div class="slot-container">'
         for idx, card in enumerate(st.session_state.dealer_hand):
             if idx == 1 and st.session_state.game_stage == "playing":
-                table_html += get_card_element(card, hidden=True) # 진행 중일 땐 숨김
+                table_html += get_card_element(card, hidden=True) 
             else:
                 table_html += get_card_element(card, hidden=False)
         table_html += f'</div>'
         
         table_html += f'<div style="text-align:center; color:rgba(255,255,255,0.1); margin:15px 0;">♣ ♦ ♥ ♠ ♣ ♦ ♥ ♠ ♣ ♦ ♥ ♠</div>'
         
-        # [내 테이블 렌더링]
         table_html += f'<div class="slot-container">'
         for card in st.session_state.player_hand:
             table_html += get_card_element(card, hidden=False)
@@ -358,7 +350,6 @@ with col_table:
     table_html += f'</div>'
     render_html(table_html)
 
-    # 컨트롤러
     if st.session_state.game_stage == "playing":
         ctrl_col1, ctrl_col2 = st.columns(2)
         with ctrl_col1:
@@ -366,12 +357,10 @@ with col_table:
                 st.session_state.player_hand.append(st.session_state.deck.pop())
                 st.rerun()
         with ctrl_col2:
-            # 스탠드 누를 시 바로 결과가 아니라 '딜러 턴'으로 넘김
             if st.button("Stand (멈추고 딜러 턴) 🛑", use_container_width=True, type="primary"):
                 st.session_state.game_stage = "dealer_turn"
                 st.rerun()
 
-    # 정산 결과 창
     if st.session_state.game_stage == "resolved":
         st.write("")
         d_final = calculate_score(st.session_state.dealer_hand)
@@ -387,18 +376,14 @@ with col_table:
             st.session_state.bet_confirmed = False
             st.rerun()
 
-# --- 6. ⏱️ 딜러의 턴 (서스펜스/쪼는 맛 로직) ---
-# 화면 렌더링이 다 끝난 후 맨 마지막에서 실행되며, 1.2초 후 스스로 화면을 재갱신함.
 if st.session_state.game_stage == "dealer_turn":
-    time.sleep(1.2) # 1.2초 정적 (숨 막히는 대기시간)
+    time.sleep(1.2) 
     
     d_score = calculate_score(st.session_state.dealer_hand)
     if d_score < 17:
-        # 점수가 모자라면 딜러가 카드를 한 장 더 뽑고 다시 1.2초 대기 사이클로 넘어감
         st.session_state.dealer_hand.append(st.session_state.deck.pop())
         st.rerun()
     else:
-        # 17점 이상이 되면 최종 승패 비교를 위해 상태를 넘기고 재갱신
         p_score = calculate_score(st.session_state.player_hand)
         if d_score > 21 or p_score > d_score: resolve_round("player_win")
         elif p_score < d_score: resolve_round("dealer_win")
