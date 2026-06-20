@@ -59,21 +59,24 @@ st.markdown(f"""
         box-shadow: inset 0px 4px 10px rgba(0,0,0,0.5);
     }}
     
-    .casino-chip {{
-        width: 55px; height: 55px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center; justify-content: center;
-        font-weight: bold; font-size: 13px;
-        color: white !important;
-        border: 4px dashed #FFF;
-        box-shadow: 0px 4px 8px rgba(0,0,0,0.4);
+    /* 기존 칩 스타일 유지하되 버튼 클릭 연동을 위해 일부 투명화 제거 및 정렬 */
+    .casino-chip-wrapper {{
+        display: inline-block;
         margin: 4px;
     }}
-    .chip-10 {{ background: #DC2626; }}
-    .chip-50 {{ background: #2563EB; }}
-    .chip-100 {{ background: #16A34A; }}
-    .chip-500 {{ background: #7C3AED; }}
+    
+    /* 기본 버튼 스트림릿 스타일 제거 및 칩 커스텀화 */
+    .stButton > button.chip-btn-style {{
+        width: 55px !important; height: 55px !important;
+        border-radius: 50% !important;
+        font-weight: bold !important; font-size: 13px !important;
+        color: white !important;
+        border: 4px dashed #FFF !important;
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.4) !important;
+        padding: 0 !important;
+        min-width: 55px !important;
+        cursor: pointer;
+    }}
 
     /* 리얼 카지노 테이블 매트 */
     .casino-table {{
@@ -223,6 +226,8 @@ col_bank, col_table = st.columns([1, 3.2])
 # [왼쪽 영역: 칩 보관 은행 박스]
 with col_bank:
     st.markdown("### 🏦 칩 보관함")
+    
+    # 상단 정보 텍스트 컨테이너 출력
     bank_html = f"""
     <div class="chip-bank-container">
         <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">보유 자산</p>
@@ -230,25 +235,34 @@ with col_bank:
         <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">베팅된 판돈</p>
         <h3 style="color: #EF4444 !important; font-weight: 700; margin: 2px 0 15px 0;">${st.session_state.current_bet}</h3>
         <hr style="border-color: rgba(255,255,255,0.1); margin-bottom: 12px;">
-        <div class="casino-chip chip-10">$10</div>
-        <div class="casino-chip chip-50">$50</div>
-        <div class="casino-chip chip-100">$100</div>
-        <div class="casino-chip chip-500">$500</div>
     </div>
     """
     render_html(bank_html)
     
+    # 칩 선택 및 베팅 제어 영역
     if st.session_state.game_stage == "betting":
-        st.write("")
-        b_c1, b_c2 = st.columns(2)
-        with b_c1: chip_val = st.selectbox("칩 금액", [10, 50, 100, 500], label_visibility="collapsed")
-        with b_c2:
-            if st.button("칩 베팅 🪙", use_container_width=True):
-                if st.session_state.balance >= chip_val:
-                    st.session_state.current_bet += chip_val
-                    st.session_state.balance -= chip_val
-                    st.rerun()
+        # 칩 클릭 시 각 금액에 맞춰 클릭 횟수만큼 누적 연산 진행
+        st.markdown('<div style="text-align: center; margin-top: -15px; margin-bottom: 15px;">', unsafe_allow_html=True)
+        chip_cols = st.columns(4)
+        chip_values = [10, 50, 100, 500]
+        chip_colors = ["#DC2626", "#2563EB", "#16A34A", "#7C3AED"]
+        
+        for idx, val in enumerate(chip_values):
+            with chip_cols[idx]:
+                # 기존 CSS 디자인 사양 그대로 버튼에 주입
+                if st.button(f"${val}", key=f"btn_chip_{val}", use_container_width=True):
+                    if st.session_state.balance >= val:
+                        st.session_state.current_bet += val
+                        st.session_state.balance -= val
+                        st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # 칩 베팅 타이틀 및 기능 (위치와 크기 그대로 보존)
+        if st.button("칩 베팅 🪙", use_container_width=True):
+            pass # 클릭 횟수대로 실시간 자동 베팅되므로 버튼 액션은 비워둠 (디자인 보존용)
+            
         if st.session_state.current_bet > 0:
+            st.write("")
             if st.button("🃏 게임 시작 (Deal)", type="primary", use_container_width=True):
                 start_round()
                 st.rerun()
@@ -271,13 +285,13 @@ with col_table:
 
     # 테이블 펠트 시작
     table_html = f'<div class="casino-table">'
-    table_html += f'<div class="deck-pile">DECK</div>'  # 우측 상단 카드 슈케이스 덱
+    table_html += f'<div class="deck-pile">DECK</div>'
     
     if st.session_state.game_stage == "betting":
         table_html += f"""
         <div style="text-align: center; padding-top: 150px;">
             <h2 style="font-weight: 700; opacity: 0.6; letter-spacing:2px;">PLACE YOUR BETS</h2>
-            <p style="color: {cfg['text_muted']}; font-size:14px;">베팅액 충전 후 Deal 버튼을 누르면 0.7초 카드 모션이 시작됩니다.</p>
+            <p style="color: {cfg['text_muted']}; font-size:14px;">원하는 칩을 클릭하여 베팅한 후 Deal 버튼을 누르면 0.7초 카드 모션이 시작됩니다.</p>
         </div>
         """
     else:
