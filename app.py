@@ -2,11 +2,11 @@ import streamlit as st
 import random
 
 # --- 1. 웹페이지 기본 설정 ---
-st.set_page_config(page_title="카드 게임", page_icon="🃏", layout="wide")
+st.set_page_config(page_title="럭셔리 카지노 블랙잭", page_icon="🃏", layout="wide")
 
 # --- 2. 게임 세션 및 베팅 시스템 초기화 ---
 if 'game_theme' not in st.session_state:
-    st.session_state['game_theme'] = "🌲 모스 그린"
+    st.session_state['game_theme'] = "🎰 라스베이거스 클래식"
 if 'balance' not in st.session_state:
     st.session_state['balance'] = 1000
 if 'current_bet' not in st.session_state:
@@ -14,49 +14,50 @@ if 'current_bet' not in st.session_state:
 if 'game_stage' not in st.session_state:
     st.session_state['game_stage'] = "betting"
 
+# 리얼 카지노 무드를 위한 주변 분위기 테마셋 (테이블 매트는 초록색 고정)
 themes = {
-    "🌲 모스 그린": {
-        "bg": "#0B301D", "table": "#0D472A", "text": "#FFFFFF", "sub": "#A7F3D0", "border": "#D4AF37",
-        "card_back": "linear-gradient(135deg, #15803D, #14532D)", "text_muted": "#86EFAC"
+    "🎰 라스베이거스 클래식": {
+        "bg": "#121110", "text": "#F5E6C8", "sub": "#D4AF37", "border": "#8B5A2B",
+        "card_back": "linear-gradient(135deg, #B22222, #7B0000)", "text_muted": "#A89F91"
     },
-    "🖤 다크 매트": {
-        "bg": "#0F0F11", "table": "#1A1A1E", "text": "#F4F4F5", "sub": "#A1A1AA", "border": "#3F3F46",
-        "card_back": "linear-gradient(135deg, #52525B, #18181B)", "text_muted": "#71717A"
+    "👑 몬테카를로 VIP 룸": {
+        "bg": "#1C0610", "text": "#FFFFFF", "sub": "#F1C40F", "border": "#D4AF37",
+        "card_back": "linear-gradient(135deg, #1F3A60, #0F1E36)", "text_muted": "#C7B3C3"
     },
-    "🤍 라이트 브리즈": {
-        "bg": "#F1F5F9", "table": "#FFFFFF", "text": "#0F172A", "sub": "#475569", "border": "#CBD5E1",
-        "card_back": "linear-gradient(135deg, #64748B, #334155)", "text_muted": "#64748B"
+    "💎 마카오 프리미엄": {
+        "bg": "#070B14", "text": "#E2E8F0", "sub": "#38BDF8", "border": "#475569",
+        "card_back": "linear-gradient(135deg, #2D1B4E, #1A0F33)", "text_muted": "#94A3B8"
     },
-    "💜 사이버 펑크": {
-        "bg": "#0B0314", "table": "#16072B", "text": "#00FFFF", "sub": "#FF007F", "border": "#FF007F",
-        "card_back": "linear-gradient(135deg, #BC00DD, #49007A)", "text_muted": "#BD10E0"
+    "🕶️ 싱가포르 하이롤러": {
+        "bg": "#0D0D0E", "text": "#E4E4E7", "sub": "#A1A1AA", "border": "#27272A",
+        "card_back": "linear-gradient(135deg, #34495E, #222F3D)", "text_muted": "#71717A"
     }
 }
 
 current_theme = st.session_state['game_theme']
 cfg = themes[current_theme]
 
-# --- 3. 🪄 0.7초 초정밀 카드 딜링 & 3D 테이블 CSS ---
+# --- 3. 🪄 고정형 초록 테이블 매트 & 3D 카드 플립 CSS ---
 st.markdown(f"""
 <style>
     .stApp {{
         background-color: {cfg['bg']} !important;
         color: {cfg['text']} !important;
-        transition: background-color 0.3s ease, color 0.3s ease;
+        transition: background-color 0.4s ease;
     }}
     
     h1, h2, h3, p, span, div {{
         color: {cfg['text']};
     }}
 
-    /* 칩 보관함 */
+    /* 칩 보관함 오버홀 */
     .chip-bank-container {{
-        background: rgba(0, 0, 0, 0.3);
+        background: rgba(0, 0, 0, 0.4);
         border: 2px solid {cfg['border']};
         border-radius: 16px;
         padding: 20px;
         text-align: center;
-        box-shadow: inset 0px 4px 10px rgba(0,0,0,0.5);
+        box-shadow: inset 0px 4px 12px rgba(0,0,0,0.6);
     }}
     
     .casino-chip {{
@@ -75,95 +76,145 @@ st.markdown(f"""
     .chip-100 {{ background: #16A34A; }}
     .chip-500 {{ background: #7C3AED; }}
 
-    /* 리얼 카지노 테이블 매트 */
+    /* [초록색 리얼 원목 테두리 테이블 매트 고정] */
     .casino-table {{
-        background-color: {cfg['table']};
-        border: 4px solid {cfg['border']};
-        border-radius: 60px 60px 30px 30px;
-        padding: 30px;
-        box-shadow: 0px 20px 50px rgba(0,0,0,0.6), inset 0px 0px 50px rgba(0,0,0,0.5);
+        background-color: #0A4D34 !important; /* 테마 무관 딥 카지노 그린 고정 */
+        border: 14px solid #4A2711 !important; /* 리얼 원목 대나무 느낌 마감 */
+        box-shadow: inset 0 0 0 3px #D4AF37, inset 0 0 40px rgba(0,0,0,0.7), 0 15px 35px rgba(0,0,0,0.6) !important;
+        border-radius: 50px;
+        padding: 35px;
         position: relative;
-        min-height: 520px;
+        min-height: 500px;
     }}
 
-    /* [오른쪽 상단] 입체 카드 덱 (딜링 슈) */
+    /* 우측 상단 원목 테이블 내부 슈케이스 덮어둔 덱 파일 */
     .deck-pile {{
         position: absolute;
-        top: 25px; right: 40px;
-        width: 90px; height: 130px;
+        top: 25px; right: 35px;
+        width: 85px; height: 125px;
         background: {cfg['card_back']};
         border-radius: 8px;
         border: 2px solid #FFF;
-        box-shadow: -3px 3px 0px #ccc, -6px 6px 0px #999, -9px 9px 15px rgba(0,0,0,0.5);
+        box-shadow: -2px 2px 0px #AAA, -4px 4px 0px #777, -7px 7px 12px rgba(0,0,0,0.6);
         display: flex;
         align-items: center; justify-content: center;
-        font-weight: bold; font-size: 12px;
-        color: rgba(255,255,255,0.7);
+        font-weight: 900; font-size: 13px;
+        color: rgba(255,255,255,0.8);
         letter-spacing: 1px;
     }}
 
-    /* 카드 전용 지정 슬롯 (점선 구역) */
+    /* [슬롯 좌우 늘어남 방지 패치] 무조건 카드 크기만큼만 예쁘게 정렬 */
     .slot-container {{
         display: flex;
         justify-content: center;
-        gap: 15px;
-        min-height: 135px;
-        background: rgba(0,0,0,0.12);
-        border: 2px dashed rgba(255,255,255,0.15);
-        border-radius: 14px;
-        padding: 10px;
-        margin: 10px auto;
-        max-width: 80%;
+        align-items: center;
+        gap: 12px;
+        min-height: 145px;
+        width: fit-content !important;
+        min-width: 280px;
+        background: rgba(0,0,0,0.25);
+        border: 2px dashed rgba(255,255,255,0.2);
+        border-radius: 12px;
+        padding: 10px 20px;
+        margin: 10px auto !important;
     }}
 
-    /* 0.7초 리얼 드로잉 & 플립 애니메이션 */
-    .playing-card {{
+    /* --- 완벽한 3D 카드 딜링 시스템 (날아올땐 뒷면 -> 안착 후 0.7초 플립) --- */
+    .card-container {{
+        perspective: 1000px;
         width: 85px; height: 125px;
-        background-color: white !important;
-        border-radius: 8px;
+        display: inline-block;
         position: relative;
-        box-shadow: 0px 5px 10px rgba(0,0,0,0.3);
+    }}
+    .card-inner {{
+        width: 100%; height: 100%;
+        position: relative;
         transform-style: preserve-3d;
+    }}
+    .card-front, .card-back {{
+        position: absolute;
+        width: 100%; height: 100%;
+        backface-visibility: hidden;
+        border-radius: 8px;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.4);
+    }}
+    .card-back {{
+        background: {cfg['card_back']};
+        border: 2px solid #FFF;
+        transform: rotateY(0deg);
+    }}
+    .card-front {{
+        background: white !important;
+        transform: rotateY(180deg);
+    }}
+
+    /* 0.7초 드로우앤플립 애니메이션 (비행시 뒷면유지 -> 후반부 뒤집기) */
+    .flip-card-animate {{
         animation: flyAndFlip 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }}
     
-    .card-back-animate {{
-        width: 85px; height: 125px;
-        background: {cfg['card_back']};
-        border-radius: 8px;
-        border: 2px solid #FFF;
-        box-shadow: 0px 5px 10px rgba(0,0,0,0.3);
+    /* 딜러 히든카드는 날아와서 뒤집지 않고 뒷면 고정 */
+    .hidden-card-animate {{
         animation: flyFaceDown 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }}
 
-    /* 덱(우측상단)에서 슬롯으로 0.7초 만에 날아와 뒤집히는 프레임 */
     @keyframes flyAndFlip {{
         0% {{
-            transform: translate(250px, -120px) rotateX(0deg) rotateY(180deg) scale(0.9);
+            transform: translate(260px, -140px) rotateY(0deg) scale(0.8);
             opacity: 0;
         }}
-        60% {{
-            transform: translate(0, 0) rotateX(0deg) rotateY(180deg) scale(1);
+        55% {{
+            transform: translate(0, 0) rotateY(0deg) scale(1);
             opacity: 1;
         }}
         100% {{
-            transform: translate(0, 0) rotateX(0deg) rotateY(0deg) scale(1);
+            transform: translate(0, 0) rotateY(180deg) scale(1);
             opacity: 1;
         }}
     }}
 
     @keyframes flyFaceDown {{
         0% {{
-            transform: translate(250px, -120px) rotate(-20deg) scale(0.9);
+            transform: translate(260px, -140px) scale(0.8);
             opacity: 0;
         }}
         100% {{
-            transform: translate(0, 0) rotate(0deg) scale(1);
+            transform: translate(0, 0) scale(1);
             opacity: 1;
         }}
     }}
 
-    /* 테마 선택창 고정 우측 하단 구석 강제 처박기 */
+    /* --- [우측 상단 알람방식 알림창 커스텀 앵커] --- */
+    div:has(> #toast-anchor) + div {{
+        position: fixed !important;
+        top: 25px !important;
+        right: 25px !important;
+        width: 310px !important;
+        background: #1E293B !important;
+        border: 2px solid #D4AF37 !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+        z-index: 999999 !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+        animation: slideInToast 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }}
+    
+    @keyframes slideInToast {{
+        0% {{ transform: translateX(120%); opacity: 0; }}
+        100% {{ transform: translateX(0); opacity: 1; }}
+    }}
+
+    /* 결과 문구만 슉 사라지는 효과 */
+    .toast-text-fade {{
+        animation: fadeOutText 3.8s ease forwards;
+    }}
+    @keyframes fadeOutText {{
+        0% {{ opacity: 1; transform: translateY(0); }}
+        80% {{ opacity: 1; transform: translateY(0); }}
+        100% {{ opacity: 0; transform: translateY(-10px); height: 0; margin: 0; padding: 0; overflow: hidden; }}
+    }}
+
+    /* 하단 팝오버 고정 마감 */
     div[data-testid="stPopover"] {{
         position: fixed !important;
         bottom: 15px !important;
@@ -176,7 +227,7 @@ st.markdown(f"""
 def render_html(html_str):
     st.markdown("".join([line.strip() for line in html_str.split("\n")]), unsafe_allow_html=True)
 
-# --- 4. 카드 시스템 핵심 함수 ---
+# --- 4. 카드 엔진 코어 모듈 ---
 def create_deck():
     suits = ['♠', '♥', '♦', '♣']
     ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
@@ -196,10 +247,25 @@ def calculate_score(hand):
         score -= 10; aces -= 1
     return score
 
-def get_card_element(card):
+# 3D 렌더링에 매칭되는 카드 빌더 함수 (글자 밀림/좌우반전 결함 완전 교정)
+def get_card_element(card, is_hidden=False):
+    if is_hidden:
+        return '<div class="card-container"><div class="card-inner hidden-card-animate"><div class="card-back"></div></div></div>'
+    
     suit, rank = card[0], card[1]
     color = "#E53E3E" if suit in ['♥', '♦'] else "#1A202C"
-    return f'<div class="playing-card"><div style="position:absolute; top:6px; left:8px; font-size:16px; font-weight:bold; color:{color};">{rank}</div><div style="position:absolute; top:22px; left:8px; font-size:12px; color:{color};">{suit}</div><div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:36px; color:{color};">{suit}</div></div>'
+    return f"""
+    <div class="card-container">
+        <div class="card-inner flip-card-animate">
+            <div class="card-back"></div>
+            <div class="card-front">
+                <div style="position:absolute; top:6px; left:8px; font-size:16px; font-weight:bold; color:{color};">{rank}</div>
+                <div style="position:absolute; top:22px; left:8px; font-size:12px; color:{color};">{suit}</div>
+                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:36px; color:{color};">{suit}</div>
+            </div>
+        </div>
+    </div>
+    """
 
 def start_round():
     if st.session_state.current_bet <= 0: return
@@ -210,24 +276,25 @@ def start_round():
 
 def resolve_round(result):
     st.session_state.game_stage = "resolved"
+    st.session_state.round_result = result
     if result == "player_blackjack": st.session_state.balance += int(st.session_state.current_bet * 2.5)
     elif result == "player_win": st.session_state.balance += st.session_state.current_bet * 2
     elif result == "push": st.session_state.balance += st.session_state.current_bet
     st.session_state.current_bet = 0
 
-# --- 5. 🎮 게임 화면 레이아웃 그리기 ---
-st.markdown(f"<h1 style='text-align: center; font-weight: 900; margin-bottom: 20px;'>🃏 카드 게임</h1>", unsafe_allow_html=True)
+# --- 5. UI 그리기 디스플레이 ---
+st.markdown("<h1 style='text-align: center; font-weight: 900; margin-bottom: 20px;'>🎰 LUXURY BLACKJACK</h1>", unsafe_allow_html=True)
 
 col_bank, col_table = st.columns([1, 3.2])
 
-# [왼쪽 영역: 칩 보관 은행 박스]
+# [왼쪽 영역: 사이드 뱅킹 박스]
 with col_bank:
-    st.markdown("### 🏦 칩 보관함")
+    st.markdown("### 🏦 내 자산 락커")
     bank_html = f"""
     <div class="chip-bank-container">
-        <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">보유 자산</p>
+        <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">보유 뱅크론</p>
         <h2 style="color: #FBBF24 !important; font-weight: 900; margin: 2px 0 12px 0;">${st.session_state.balance}</h2>
-        <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">베팅된 판돈</p>
+        <p style="font-size: 12px; color: {cfg['text_muted']}; margin: 0;">현재 판돈 베팅액</p>
         <h3 style="color: #EF4444 !important; font-weight: 700; margin: 2px 0 15px 0;">${st.session_state.current_bet}</h3>
         <hr style="border-color: rgba(255,255,255,0.1); margin-bottom: 12px;">
         <div class="casino-chip chip-10">$10</div>
@@ -241,26 +308,26 @@ with col_bank:
     if st.session_state.game_stage == "betting":
         st.write("")
         b_c1, b_c2 = st.columns(2)
-        with b_c1: chip_val = st.selectbox("칩 금액", [10, 50, 100, 500], label_visibility="collapsed")
+        with b_c1: chip_val = st.selectbox("칩 선택", [10, 50, 100, 500], label_visibility="collapsed")
         with b_c2:
-            if st.button("칩 베팅 🪙", use_container_width=True):
+            if st.button("배팅 추가 🪙", use_container_width=True):
                 if st.session_state.balance >= chip_val:
                     st.session_state.current_bet += chip_val
                     st.session_state.balance -= chip_val
                     st.rerun()
         if st.session_state.current_bet > 0:
-            if st.button("🃏 게임 시작 (Deal)", type="primary", use_container_width=True):
+            if st.button("🃏 패 나누기 (Deal)", type="primary", use_container_width=True):
                 start_round()
                 st.rerun()
-            if st.button("❌ 베팅 취소", use_container_width=True):
+            if st.button("❌ 베팅 전액 취소", use_container_width=True):
                 st.session_state.balance += st.session_state.current_bet
                 st.session_state.current_bet = 0
                 st.rerun()
     else:
         st.write("")
-        st.info("🎰 게임이 진행 중입니다.")
+        st.info("🃏 딜러와의 승부가 진행 중입니다.")
 
-# [오른쪽 영역: 3D 카지노 게임 테이블]
+# [오른쪽 영역: 고정형 녹색 벨벳 카지노 데스크]
 with col_table:
     if st.session_state.game_stage != "betting":
         p_score = calculate_score(st.session_state.player_hand)
@@ -269,51 +336,53 @@ with col_table:
             resolve_round("player_blackjack")
             st.rerun()
 
-    # 테이블 펠트 시작
-    table_html = f'<div class="casino-table">'
-    table_html += f'<div class="deck-pile">DECK</div>'  # 우측 상단 카드 슈케이스 덱
+    # 원목 그린 Felt 테이블 시작
+    table_html = '<div class="casino-table">'
+    table_html += '<div class="deck-pile">DECK</div>'  # 우측 상단 덮어둔 카드 덱 파일 구조물
     
     if st.session_state.game_stage == "betting":
-        table_html += f"""
-        <div style="text-align: center; padding-top: 150px;">
-            <h2 style="font-weight: 700; opacity: 0.6; letter-spacing:2px;">PLACE YOUR BETS</h2>
-            <p style="color: {cfg['text_muted']}; font-size:14px;">베팅액 충전 후 Deal 버튼을 누르면 0.7초 카드 모션이 시작됩니다.</p>
+        # 군더더기 문구 모두 제거하고 요구한 메인 타이틀만 깔끔하게 배치
+        table_html += """
+        <div style="text-align: center; padding-top: 160px;">
+            <h2 style="font-weight: 800; opacity: 0.75; letter-spacing: 5px; color: #D4AF37 !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">PLACE YOUR BETS</h2>
         </div>
         """
     else:
-        # --- 딜러 카드 및 지정 슬롯 상단 배치 ---
-        table_html += f'<div style="text-align: center; font-size: 12px; font-weight: bold; color:{cfg["text_muted"]};">🤖 DEALER TABLE SLOT</div>'
-        table_html += f'<div class="slot-container">'
+        # 딜러 영역 및 카드 지정 슬롯 상단 배치
+        table_html += f'<div style="text-align: center; font-size: 11px; font-weight: bold; color: rgba(255,255,255,0.6); letter-spacing:1px;">DEALER HAND</div>'
+        table_html += '<div class="slot-container">'
         for idx, card in enumerate(st.session_state.dealer_hand):
             if idx == 1 and st.session_state.game_stage == "playing":
-                table_html += '<div class="card-back-animate"></div>'
+                table_html += get_card_element(card, is_hidden=True)
             else:
                 table_html += get_card_element(card)
-        table_html += f'</div>'
+        table_html += '</div>'
         
-        table_html += f'<div style="text-align:center; color:rgba(255,255,255,0.1); margin:15px 0;">♣ ♦ ♥ ♠ ♣ ♦ ♥ ♠ ♣ ♦ ♥ ♠</div>'
+        table_html += '<div style="text-align:center; color:rgba(255,255,255,0.15); margin:20px 0; font-size:12px;">★ BLACKJACK PAYS 3 TO 2 ★</div>'
         
-        # --- 플레이어 카드 및 지정 슬롯 하단 배치 ---
-        table_html += f'<div class="slot-container">'
+        # 플레이어 영역 및 카드 지정 슬롯 하단 배치
+        table_html += '<div class="slot-container">'
         for card in st.session_state.player_hand:
             table_html += get_card_element(card)
-        table_html += f'</div>'
-        table_html += f'<div style="text-align: center; font-size: 12px; font-weight: bold; color:{cfg["text_muted"]};">🙋‍♂️ MY HAND SLOT ({p_score}점)</div>'
+        table_html += '</div>'
+        table_html += f'<div style="text-align: center; font-size: 13px; font-weight: 800; color: #FBBF24;">MY HAND ({p_score}점)</div>'
 
-    table_html += f'</div>'
+    table_html += '</div>'
     render_html(table_html)
 
-    # 제어용 작동 버튼
+    # 진행 컨트롤 버튼 액션
     if st.session_state.game_stage == "playing":
+        st.write("")
         ctrl_col1, ctrl_col2 = st.columns(2)
         with ctrl_col1:
-            if st.button("Hit (카드 받기) 🃏", use_container_width=True):
+            if st.button("Hit (카드 더 받기) 🃏", use_container_width=True):
                 st.session_state.player_hand.append(st.session_state.deck.pop())
                 if calculate_score(st.session_state.player_hand) > 21:
                     resolve_round("dealer_win")
                 st.rerun()
         with ctrl_col2:
-            if st.button("Stand (결과 보기) 🛑", use_container_width=True, type="primary"):
+            if st.button("Stand (멈추고 결과 비교) 🛑", use_container_width=True, type="primary"):
+                # 내가 스탠드를 하면 비로소 상대(딜러)도 한 장씩 카드를 채워나가는 모션 구현
                 while calculate_score(st.session_state.dealer_hand) < 17:
                     st.session_state.dealer_hand.append(st.session_state.deck.pop())
                 
@@ -325,27 +394,41 @@ with col_table:
                 else: resolve_round("push")
                 st.rerun()
 
-    # 정산 결과 창
-    if st.session_state.game_stage == "resolved":
-        st.write("")
-        p_final = calculate_score(st.session_state.player_hand)
-        d_final = calculate_score(st.session_state.dealer_hand)
-        
-        if p_final > 21: st.error("💥 버스트! 내가 패배했습니다.")
-        elif d_final > 21: st.success("🎉 딜러 버스트! 플레이어 대승리!"); st.balloons()
-        elif p_final > d_final: st.success(f"🏆 대승리! ({p_final} vs {d_final})"); st.balloons()
-        elif p_final < d_final: st.error(f"😢 패배했습니다. 딜러 승리. ({p_final} vs {d_final})")
-        else: st.warning(f"🤝 {p_final}점 동점으로 비겼습니다. 판돈을 돌려받습니다.")
+# --- 6. 🔔 우측 상단 알람방식 결과 통보창 및 고정식 재시작 버튼 패치 ---
+if st.session_state.game_stage == "resolved":
+    p_final = calculate_score(st.session_state.player_hand)
+    d_final = calculate_score(st.session_state.dealer_hand)
+    res = st.session_state.round_result
+    
+    # 알람창 스타일 매핑 설정
+    if p_final > 21: title_text, border_c = "💥 버스트 패배!", "#EF4444"
+    elif d_final > 21: title_text, border_c = "🎉 딜러 버스트 승리!", "#10B981"; st.balloons()
+    elif res == "player_blackjack": title_text, border_c = "🃏 천하무적 블랙잭!", "#F59E0B"; st.balloons()
+    elif res == "player_win": title_text, border_c = f"🏆 승리! ({p_final} vs {d_final})", "#10B981"; st.balloons()
+    elif res == "dealer_win": title_text, border_c = f"😢 패배... ({p_final} vs {d_final})", "#EF4444"
+    else: title_text, border_c = f"🤝 무승부 푸시 ({p_final}점)", "#64748B"
 
-        if st.button("🔄 다음 게임 정산 및 진행하기", use_container_width=True, type="primary"):
+    # 히든 앵커를 선언하고 CSS를 통해 다음 컨테이너 전체를 우측 상단에 알람창처럼 오버레이 고정시킴
+    st.markdown('<div id="toast-anchor"></div>', unsafe_allow_html=True)
+    with st.container():
+        # 결과 텍스트 구역 (CSS 스케줄러로 3.8초 뒤 자연스럽게 투명해지며 사라짐)
+        st.markdown(f"""
+        <div class="toast-text-fade" style="border-left: 4px solid {border_c}; padding-left: 10px; margin-bottom: 12px;">
+            <p style="font-size: 11px; color:#94A3B8; margin:0;">ROUND RESULT</p>
+            <h4 style="color: white !important; font-weight:900; margin: 2px 0 0 0; font-size:15px;">{title_text}</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 다시시작 제어 컴포넌트 (사라지지 않고 고정되어 유저가 누를 때까지 상시 유지)
+        if st.button("🔄 다음 게임 정산 및 시작", use_container_width=True, type="primary"):
             st.session_state.game_stage = "betting"
             st.rerun()
 
-# [오른쪽 구석 강제 처박기 테마 선택 버튼]
-with st.popover("🎨 테마"):
+# [우측 하단 구석 고정 전용 팝오버]
+with st.popover("🎨 VIP 라운지 테마 조명 변경"):
     selected = st.radio(
-        "테마 선택", ["🌲 모스 그린", "🖤 다크 매트", "🤍 라이트 브리즈", "💜 사이버 펑크"],
-        index=["🌲 모스 그린", "🖤 다크 매트", "🤍 라이트 브리즈", "💜 사이버 펑크"].index(current_theme)
+        "주변 분위기 전환", list(themes.keys()),
+        index=list(themes.keys()).index(current_theme)
     )
     if selected != current_theme:
         st.session_state['game_theme'] = selected
